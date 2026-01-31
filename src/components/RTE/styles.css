@@ -1,0 +1,123 @@
+/* TipTap Specific Styles */
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: #adb5bd;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Code block styling */
+.ProseMirror pre {
+  background: #0d0d0d;
+  color: #fff;
+  font-family: "JetBrainsMono", monospace;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+}
+
+.ProseMirror pre code {
+  color: inherit;
+  padding: 0;
+  background: none;
+  font-size: 0.8rem;
+}
+
+.ProseMirror blockquote {
+  border-left: 3px solid #6366f1;
+  padding-left: 1rem;
+}
+
+.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+/* --- TIPTAP CORE STYLES --- */
+
+/* 1. Placeholder Color */
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: #adb5bd;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* 2. Tables Styling (Important) */
+.ProseMirror table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+.ProseMirror td,
+.ProseMirror th {
+  min-width: 1em;
+  border: 1px solid #ced4da;
+  padding: 8px 10px;
+  vertical-align: top;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* Dark mode override for tables */
+.dark .ProseMirror td,
+.dark .ProseMirror th {
+  border-color: #374151;
+}
+
+.ProseMirror th {
+  font-weight: bold;
+  text-align: left;
+  background-color: #f8f9fa;
+}
+
+.dark .ProseMirror th {
+  background-color: #1f2937;
+}
+
+/* 3. Task Lists (Checkboxes) */
+ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+}
+
+ul[data-type="taskList"] li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+ul[data-type="taskList"] li > label {
+  flex: 0 0 auto;
+  margin-right: 0.5rem;
+  user-select: none;
+}
+
+ul[data-type="taskList"] li > div {
+  flex: 1 1 auto;
+}
+
+/* 4. Highlight */
+.ProseMirror mark {
+  background-color: #fef08a; 
+  padding: 0.125em 0;
+  border-radius: 0.25em;
+}
+
+.dark .ProseMirror mark {
+  background-color: #854d0e; 
+  color: white;
+}
+
+/* 5. Youtube Videos */
+.ProseMirror iframe {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  margin: 1rem 0;
+}

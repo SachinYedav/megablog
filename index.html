@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/icons/logo.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <meta name="theme-color" content="#121212" />
+    
+    <title>MegaBlog</title>
+
+    <script>
+      (function() {
+        try {
+          const localTheme = localStorage.getItem('theme');
+          const html = document.documentElement;
+          
+          if (localTheme === 'light') {
+            html.classList.add('light');
+            html.classList.remove('dark');
+            document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff');
+          } else {
+            html.classList.add('dark');
+            html.classList.remove('light');
+            document.querySelector('meta[name="theme-color"]').setAttribute('content', '#121212');
+          }
+        } catch (e) {}
+      })();
+    </script>
+
+    <style>
+      /* CSS VARIABLES: Theme Control */
+      :root {
+        /* DEFAULT: DARK MODE VALUES (First time user ke liye) */
+        --loader-bg: #121212;
+        --loader-logo-filter: drop-shadow(0 0 20px rgba(0, 100, 255, 0.3));
+      }
+
+      /* OVERRIDE: LIGHT MODE VALUES */
+      html.light {
+        --loader-bg: #ffffff;
+        --loader-logo-filter: drop-shadow(0 0 15px rgba(79, 70, 229, 0.4)); 
+      }
+
+      body {
+        background-color: var(--loader-bg); 
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Loader Container */
+      .app-loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        background-color: var(--loader-bg); 
+        transition: background-color 0.3s ease; 
+      }
+
+      /* Logo Animation */
+      .app-logo {
+        width: 120px;
+        height: 120px;
+        object-fit: contain;
+        animation: breathe 3s infinite ease-in-out;
+        filter: var(--loader-logo-filter); 
+        will-change: transform, opacity; 
+      }
+
+      @keyframes breathe {
+        0% { transform: scale(1); opacity: 0.8; }
+        50% { transform: scale(1.1); opacity: 1; }
+        100% { transform: scale(1); opacity: 0.8; }
+      }
+    </style>
+  </head>
+  
+  <body>
+    <div id="root">
+      <div class="app-loader">
+        <img src="/icons/logo.png" alt="MegaBlog" class="app-logo" />
+      </div>
+    </div>
+    
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

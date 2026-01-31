@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+
+# 🚫 Block Auth & Private User Routes (Security)
+Disallow: /add-post
+Disallow: /edit-post/
+Disallow: /settings
+Disallow: /profile
+Disallow: /subscriptions
+Disallow: /forgot-password
+
+# 🚫 Block System/API paths (Optional but recommended)
+Disallow: /admin/
+Disallow: /api/
+
+# ✅ Sitemap Location
+Sitemap: https://megablog.com/sitemap.xml
