@@ -5,13 +5,15 @@ import {
     MessageSquarePlus, MoreVertical, Edit2, Trash, CheckCircle2 
 } from "lucide-react";
 import { useSelector } from "react-redux";
-import appwriteService from "../appwrite/config";
-import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom"; 
 import { Helmet } from "react-helmet-async";
-import {Modal} from "../components/index"
+import toast from "react-hot-toast";
+
+import appwriteService from "../appwrite/config";
+import { Modal } from "../components/index";
 
 // ==========================================
-// SUB-COMPONENT: SCREENSHOT LIGHTBOX
+// 1. SUB-COMPONENT: SCREENSHOT LIGHTBOX
 // ==========================================
 const ScreenshotViewer = ({ images, initialIndex, onClose }) => {
     if (initialIndex === null) return null;
@@ -47,7 +49,7 @@ const ScreenshotViewer = ({ images, initialIndex, onClose }) => {
 };
 
 // ==========================================
-// SUB-COMPONENT: RATING STATS
+// 2. SUB-COMPONENT: RATING STATS
 // ==========================================
 const RatingStats = React.memo(({ reviews }) => {
     const { counts, total, average } = useMemo(() => {
@@ -92,7 +94,7 @@ const RatingStats = React.memo(({ reviews }) => {
 });
 
 // ==========================================
-//  SUB-COMPONENT: DATA SAFETY ACCORDION
+// 3. SUB-COMPONENT: DATA SAFETY CARD
 // ==========================================
 const DataSafetyCard = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -121,7 +123,6 @@ const DataSafetyCard = () => {
                     <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
                         Safety starts with understanding how developers collect and share your data. Data privacy and security practices may vary based on your use, region, and age.
                     </p>
-                    
                     <div className="space-y-4">
                         {[
                             { icon: Share2, title: "No data shared", desc: "No data shared with third parties" },
@@ -137,7 +138,6 @@ const DataSafetyCard = () => {
                             </div>
                         ))}
                     </div>
-                    
                     <button className="text-green-600 font-medium text-sm hover:underline flex items-center gap-1">
                         See details <ChevronRight className="w-4 h-4" />
                     </button>
@@ -148,68 +148,84 @@ const DataSafetyCard = () => {
 };
 
 // ==========================================
-//  MAIN PAGE COMPONENT
+// 4. MAIN PAGE COMPONENT
 // ==========================================
 const DownloadApp = () => {
-    // UI States
+    const navigate = useNavigate();
+    const userData = useSelector((state) => state.auth.userData);
+    const reviewFormRef = useRef(null);
+
+    // States
     const [activeTab, setActiveTab] = useState("mobile"); 
-    const [deferredPrompt, setDeferredPrompt] = useState(null);
-    const [isInstalled, setIsInstalled] = useState(false);
     const [viewImageIndex, setViewImageIndex] = useState(null);
     const [showPermissions, setShowPermissions] = useState(false);
-    
-    // Data States
+    const [loading, setLoading] = useState(true);
+
+    const [deferredPrompt, setDeferredPrompt] = useState(null);
+    const [installStatus, setInstallStatus] = useState("installable");
+
     const [reviews, setReviews] = useState([]);
     const [userRating, setUserRating] = useState(0);
     const [reviewText, setReviewText] = useState("");
     const [alreadyReviewed, setAlreadyReviewed] = useState(false);
-    const [loading, setLoading] = useState(true);
-    
-    // Edit/Delete States
     const [editingId, setEditingId] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [reviewToDelete, setReviewToDelete] = useState(null);
     const [showMenuId, setShowMenuId] = useState(null);
 
-    const userData = useSelector((state) => state.auth.userData);
-    const reviewFormRef = useRef(null);
-
-    // Image Assets
     const mobileScreens = useMemo(() => ["/screenshots/screenshot-mobile.png", "/screenshots/screenshot-mobile.png", "/screenshots/screenshot-mobile.png"], []); 
     const desktopScreens = useMemo(() => ["/screenshots/Desktopview.png", "/screenshots/Desktopview1.png"], []);
 
-    // ------------------------------------------
-    //  INITIALIZATION & PWA LOGIC
-    // ------------------------------------------
+    // ============================================================
+    // LIFECYCLE: PWA INSTALLATION LOGIC
+    // ============================================================
     useEffect(() => {
-        const beforeInstallHandler = (e) => {
-            e.preventDefault();
-            setDeferredPrompt(e);
-            setIsInstalled(false);
-        };
-
-        const appInstalledHandler = () => {
-            setIsInstalled(true);
-            setDeferredPrompt(null);
-            toast.success("App installed successfully!");
-        };
-
-        if (window.matchMedia('(display-mode: standalone)').matches) {
-            setIsInstalled(true);
+        // 1. Check Standalone Mode
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+        if (isStandalone) {
+            setInstallStatus("active");
         }
 
-        window.addEventListener("beforeinstallprompt", beforeInstallHandler);
-        window.addEventListener("appinstalled", appInstalledHandler);
+        // 2. Check Installed Status via API
+        if ('getInstalledRelatedApps' in navigator) {
+            navigator.getInstalledRelatedApps().then((apps) => {
+                if (apps.length > 0) setInstallStatus("installed");
+            }).catch(() => {});
+        }
 
-        // Fetch Data
+        // 3. Handle Install Prompt Event
+        const handleBeforeInstall = (e) => {
+            e.preventDefault(); 
+            setDeferredPrompt(e);
+            setInstallStatus("installable");
+        };
+
+        // 4. Handle Successful Installation
+        const handleAppInstalled = () => {
+            setInstallStatus("installed");
+            setDeferredPrompt(null);
+            toast.success("App installed successfully! 🚀");
+        };
+
+        window.addEventListener("beforeinstallprompt", handleBeforeInstall);
+        window.addEventListener("appinstalled", handleAppInstalled);
+
+        // Fallback: Check if event fired before mount
+        if (window.deferredPrompt) {
+            setDeferredPrompt(window.deferredPrompt);
+            setInstallStatus("installable");
+        }
+
+        // Data Loading
+        let isMounted = true;
         const loadData = async () => {
             try {
                 const res = await appwriteService.getRatings();
-                if(res) setReviews(res.documents);
+                if (isMounted && res) setReviews(res.documents);
 
                 if (userData && appwriteService.getUserReview) {
                     const existing = await appwriteService.getUserReview(userData.$id);
-                    if (existing) {
+                    if (isMounted && existing) {
                         setAlreadyReviewed(true);
                         setUserRating(existing.rating);
                     }
@@ -217,43 +233,57 @@ const DownloadApp = () => {
             } catch (error) {
                 console.error("Data Load Error:", error);
             } finally {
-                setLoading(false);
+                if (isMounted) setLoading(false);
             }
         };
         loadData();
 
         return () => {
-            window.removeEventListener("beforeinstallprompt", beforeInstallHandler);
-            window.removeEventListener("appinstalled", appInstalledHandler);
+            isMounted = false;
+            window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+            window.removeEventListener("appinstalled", handleAppInstalled);
         };
     }, [userData]);
 
-    // ------------------------------------------
-    // HANDLERS
-    // ------------------------------------------
-    const handleInstall = async () => {
-        if (isInstalled) {
-            toast("App is already installed!", { icon: "📱" });
-            return;
-        }
-        if (!deferredPrompt) {
-            const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || 
-                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-            if (isIOS) {
-                toast("Tap 'Share' ⬆️ then 'Add to Home Screen' ➕", { 
-                    icon: "🍏", 
-                    duration: 5000 
-                });
-            } else {
-                toast.error("App installation not supported on this browser.");
-            }
+    // ============================================================
+    // HANDLERS
+    // ============================================================
+    const handleInstall = async () => {
+        // Case A: Running in App
+        if (installStatus === "active") {
+            toast("You are already using the App!", { icon: "✅" });
             return;
         }
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === "accepted") {
-            setDeferredPrompt(null);
+
+        // Case B: Installed 
+        if (installStatus === "installed") {
+            toast.success("Opening App...");
+            window.location.href = "/"; 
+            return;
+        }
+
+        // Case C: iOS Instructions
+        const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+        if (isIOS) {
+            toast((t) => (
+                <div className="flex flex-col gap-1">
+                   <span>Tap <b>Share</b> <Share2 className="w-4 h-4 inline"/> then</span>
+                   <span className="font-bold">Add to Home Screen ➕</span>
+                </div>
+            ), { duration: 5000 });
+            return;
+        }
+
+        // Case D: Trigger Native Prompt
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === "accepted") {
+                setDeferredPrompt(null);
+            }
+        } else {
+            toast.error("Installation option unavailable. Try Chrome menu.");
         }
     };
 
@@ -271,16 +301,17 @@ const DownloadApp = () => {
         }
     };
 
-    const handleReviewAction = useCallback(async (action, payload) => {
+    const handleReviewAction = useCallback(async (action) => {
         if (!userData) return toast.error("Please login first");
         
         try {
             if (action === "create") {
                 if (userRating === 0) return toast.error("Please select a rating");
+                
                 const res = await appwriteService.addReview({
                     userId: userData.$id,
                     userName: userData.name,
-                    userAvatar: userData.prefs?.avatarId || "",
+                    userAvatar: userData.prefs?.avatarId || userData.avatarId || "", 
                     rating: userRating,
                     review: reviewText
                 });
@@ -309,7 +340,7 @@ const DownloadApp = () => {
         }
     }, [userData, userRating, reviewText, editingId, reviewToDelete]);
 
-    // Helper Functions
+    // Helpers
     const scrollToForm = () => reviewFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     const avgRating = useMemo(() => reviews.length > 0 ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) : "New", [reviews]);
 
@@ -320,7 +351,6 @@ const DownloadApp = () => {
                 <meta name="description" content="Download the official MegaBlog app for the best reading and writing experience." />
             </Helmet>
 
-            {/* Viewer Overlay */}
             <ScreenshotViewer 
                 images={activeTab === "mobile" ? mobileScreens : desktopScreens}
                 initialIndex={viewImageIndex}
@@ -329,10 +359,8 @@ const DownloadApp = () => {
 
             <div className="max-w-5xl mx-auto">
                 
-                {/* 🔥 HERO SECTION */}
+                {/* --- HERO SECTION --- */}
                 <div className="flex flex-col md:flex-row gap-8 mb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    
-                    {/* App Icon & Info */}
                     <div className="flex gap-6 flex-1 items-start">
                         <div className="relative group shrink-0">
                             <img 
@@ -345,14 +373,13 @@ const DownloadApp = () => {
                         
                         <div className="flex flex-col justify-center pt-1">
                             <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-2 flex items-center gap-3">
-                                MegaBlog 
-                                <ShieldCheck className="text-blue-500 fill-blue-500/20 w-7 h-7" />
+                                MegaBlog <ShieldCheck className="text-blue-500 fill-blue-500/20 w-7 h-7" />
                             </h1>
                             <p className="text-green-600 dark:text-green-400 font-semibold mb-4 text-base tracking-wide">
                                 Official MegaBlog Team
                             </p>
                             
-                            {/* Badges Row */}
+                            {/* Badges */}
                             <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                                 <div className="flex items-center gap-1.5">
                                     <span className="font-bold text-gray-900 dark:text-white">{avgRating}</span>
@@ -362,8 +389,7 @@ const DownloadApp = () => {
                                 <span>{reviews.length > 0 ? `${reviews.length} reviews` : "No reviews"}</span>
                                 <span className="w-px h-4 bg-gray-300 dark:bg-gray-700"></span>
                                 <div className="flex items-center gap-1">
-                                    <Download className="w-3.5 h-3.5" />
-                                    <span>10k+</span>
+                                    <Download className="w-3.5 h-3.5" /> <span>10k+</span>
                                 </div>
                                 <span className="w-px h-4 bg-gray-300 dark:bg-gray-700"></span>
                                 <span className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border dark:border-gray-700">Everyone</span>
@@ -371,18 +397,23 @@ const DownloadApp = () => {
                         </div>
                     </div>
 
-                    {/* Action Buttons */}
+                    {/* --- MAIN ACTION BUTTONS --- */}
                     <div className="flex flex-row gap-3 mt-2 md:mt-0 md:items-start w-full md:w-auto">
                         <button 
                             onClick={handleInstall}
                             className={`flex-1 md:flex-none px-8 py-3.5 rounded-2xl font-semibold transition-all flex items-center justify-center gap-2.5 shadow-lg active:scale-95 whitespace-nowrap min-w-[160px] ${
-                                isInstalled 
+                                installStatus === "active" || installStatus === "installed"
                                 ? "bg-gray-100 text-green-700 border border-green-200 hover:bg-gray-200 dark:bg-gray-800 dark:text-green-400 dark:border-green-900"
                                 : "bg-[#01875f] hover:bg-[#017a56] text-white shadow-green-900/20"
                             }`}
                         >
-                            {isInstalled ? <Check className="w-5 h-5" /> : <Download className="w-5 h-5" />}
-                            {isInstalled ? "Open App" : "Install"}
+                            {installStatus === "active" ? <ShieldCheck className="w-5 h-5" /> : 
+                             installStatus === "installed" ? <Check className="w-5 h-5" /> : 
+                             <Download className="w-5 h-5" />}
+                            
+                            {installStatus === "active" ? "Running App" : 
+                             installStatus === "installed" ? "Open App" : 
+                             "Install"}
                         </button>
                         <button 
                             onClick={handleShare} 
@@ -394,7 +425,7 @@ const DownloadApp = () => {
                     </div>
                 </div>
 
-                {/*  SCREENSHOTS CAROUSEL */}
+                {/* --- SCREENSHOTS --- */}
                 <div className="mb-12 overflow-hidden">
                     <div className="flex gap-8 mb-6 overflow-x-auto pb-2 scrollbar-hide border-b dark:border-gray-800">
                         {['mobile', 'desktop'].map((tab) => (
@@ -428,7 +459,7 @@ const DownloadApp = () => {
                     </div>
                 </div>
 
-                {/*  MAIN CONTENT GRID */}
+                {/* --- GRID LAYOUT --- */}
                 <div className="grid md:grid-cols-3 gap-12 mb-12">
                     <div className="md:col-span-2 space-y-10">
                         
@@ -436,8 +467,7 @@ const DownloadApp = () => {
                         <section>
                             <div className="flex items-center justify-between mb-4">
                                 <h2 className="text-xl font-bold dark:text-white flex items-center gap-2">
-                                    About this app
-                                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                                    About this app <ChevronRight className="w-5 h-5 text-gray-400" />
                                 </h2>
                             </div>
                             <p className="text-gray-600 dark:text-gray-300 text-sm leading-7 mb-6">
@@ -464,15 +494,14 @@ const DownloadApp = () => {
                             </div>
                         </section>
 
-                        {/* Data Safety */}
                         <DataSafetyCard />
 
-                        {/* Ratings & Reviews */}
+                        {/* --- RATINGS & REVIEWS --- */}
                         <section id="reviews">
                             <h2 className="text-xl font-bold dark:text-white mb-6">Ratings and reviews</h2>
                             <RatingStats reviews={reviews} />
                             
-                            {/* Review Form */}
+                            {/* Input Form */}
                             <div ref={reviewFormRef} className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-2xl border dark:border-gray-800 mb-8 transition-colors">
                                 {!userData ? (
                                     <div className="text-center py-6">
@@ -497,11 +526,7 @@ const DownloadApp = () => {
                                         
                                         <div className="flex gap-3 mb-6">
                                             {[1, 2, 3, 4, 5].map((star) => (
-                                                <button 
-                                                    key={star} 
-                                                    onClick={() => setUserRating(star)} 
-                                                    className="transition-transform hover:scale-110 active:scale-95 focus:outline-none"
-                                                >
+                                                <button key={star} onClick={() => setUserRating(star)} className="transition-transform hover:scale-110 active:scale-95 focus:outline-none">
                                                     <Star className={`w-9 h-9 ${star <= userRating ? "fill-[#01875f] text-[#01875f]" : "text-gray-300 dark:text-gray-700"}`} />
                                                 </button>
                                             ))}
@@ -538,63 +563,73 @@ const DownloadApp = () => {
 
                             {/* Reviews List */}
                             <div className="space-y-8">
-                                {reviews.map((rev) => (
-                                    <div key={rev.$id} className="flex gap-4 group">
-                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shrink-0 shadow text-sm uppercase">
-                                            {rev.userName ? rev.userName.charAt(0) : "U"}
-                                        </div>
-                                        
-                                        <div className="flex-1">
-                                            <div className="flex justify-between items-start">
-                                                <p className="text-sm font-bold dark:text-white">{rev.userName || "Unknown User"}</p>
-                                                
-                                                {/* 3-Dot Menu */}
-                                                {userData && rev.userId === userData.$id && (
-                                                    <div className="relative">
-                                                        <button 
-                                                            onClick={() => setShowMenuId(showMenuId === rev.$id ? null : rev.$id)}
-                                                            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100"
-                                                            >
-                                                            <MoreVertical className="w-4 h-4 text-gray-500" />
-                                                        </button>
-                                                        
-                                                        {showMenuId === rev.$id && (
-                                                            <div className="absolute right-0 top-6 w-32 bg-white dark:bg-gray-900 border dark:border-gray-700 shadow-xl rounded-lg overflow-hidden z-10 animate-in zoom-in-95 origin-top-right">
-                                                                <button onClick={() => { 
-                                                                    setEditingId(rev.$id); 
-                                                                    setUserRating(rev.rating); 
-                                                                    setReviewText(rev.review); 
-                                                                    setShowMenuId(null); 
-                                                                    scrollToForm(); 
-                                                                }} className="w-full text-left px-4 py-2.5 text-xs font-medium hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2">
-                                                                    <Edit2 className="w-3 h-3" /> Edit
-                                                                </button>
-                                                                <button onClick={() => { setReviewToDelete(rev.$id); setShowDeleteModal(true); setShowMenuId(null); }} className="w-full text-left px-4 py-2.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2">
-                                                                    <Trash className="w-3 h-3" /> Delete
-                                                                </button>
-                                                            </div>
-                                                        )}
-                                                    </div>
+                                {reviews.map((rev) => {
+                                    const avatarSrc = rev.userAvatar 
+                                        ? appwriteService.getFilePreview(rev.userAvatar) 
+                                        : null;
+
+                                    return (
+                                        <div key={rev.$id} className="flex gap-4 group">
+                                            <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-800 overflow-hidden shrink-0 shadow border border-gray-100 dark:border-gray-700 flex items-center justify-center">
+                                                {avatarSrc ? (
+                                                    <img 
+                                                        src={avatarSrc} 
+                                                        alt={rev.userName}
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => { e.target.style.display='none'; }}
+                                                    />
+                                                ) : (
+                                                    <span className="text-gray-500 font-bold text-sm uppercase">
+                                                        {rev.userName ? rev.userName.charAt(0) : "U"}
+                                                    </span>
                                                 )}
                                             </div>
-
-                                            <div className="flex items-center gap-2 mt-1 mb-2">
-                                                <div className="flex text-[#01875f]">
-                                                    {[...Array(5)].map((_, i) => (
-                                                        <Star key={i} className={`w-3 h-3 ${i < rev.rating ? "fill-current" : "text-gray-300 dark:text-gray-700 fill-none"}`} />
-                                                    ))}
-                                                </div>
-                                                <span className="text-xs text-gray-400">
-                                                    {rev.$createdAt ? new Date(rev.$createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : "Recent"}
-                                                </span>
-                                            </div>
                                             
-                                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed break-words">
-                                                {rev.review}
-                                            </p>
+                                            <div className="flex-1">
+                                                <div className="flex justify-between items-start">
+                                                    <p className="text-sm font-bold dark:text-white">{rev.userName || "Unknown User"}</p>
+                                                    
+                                                    {userData && rev.userId === userData.$id && (
+                                                        <div className="relative">
+                                                            <button 
+                                                                onClick={() => setShowMenuId(showMenuId === rev.$id ? null : rev.$id)}
+                                                                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100"
+                                                            >
+                                                                <MoreVertical className="w-4 h-4 text-gray-500" />
+                                                            </button>
+                                                            
+                                                            {showMenuId === rev.$id && (
+                                                                <div className="absolute right-0 top-6 w-32 bg-white dark:bg-gray-900 border dark:border-gray-700 shadow-xl rounded-lg overflow-hidden z-10 animate-in zoom-in-95 origin-top-right">
+                                                                    <button onClick={() => { setEditingId(rev.$id); setUserRating(rev.rating); setReviewText(rev.review); setShowMenuId(null); scrollToForm(); }} className="w-full text-left px-4 py-2.5 text-xs font-medium hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2">
+                                                                        <Edit2 className="w-3 h-3" /> Edit
+                                                                    </button>
+                                                                    <button onClick={() => { setReviewToDelete(rev.$id); setShowDeleteModal(true); setShowMenuId(null); }} className="w-full text-left px-4 py-2.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2">
+                                                                        <Trash className="w-3 h-3" /> Delete
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="flex items-center gap-2 mt-1 mb-2">
+                                                    <div className="flex text-[#01875f]">
+                                                        {[...Array(5)].map((_, i) => (
+                                                            <Star key={i} className={`w-3 h-3 ${i < rev.rating ? "fill-current" : "text-gray-300 dark:text-gray-700 fill-none"}`} />
+                                                        ))}
+                                                    </div>
+                                                    <span className="text-xs text-gray-400">
+                                                        {rev.$createdAt ? new Date(rev.$createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : "Recent"}
+                                                    </span>
+                                                </div>
+                                                
+                                                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed break-words">
+                                                    {rev.review}
+                                                </p>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                                 {reviews.length === 0 && (
                                     <div className="text-center py-10 bg-gray-50 dark:bg-gray-900/30 rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
                                         <p className="text-gray-500">No reviews yet. Be the first to share your thoughts!</p>
@@ -604,7 +639,7 @@ const DownloadApp = () => {
                         </section>
                     </div>
 
-                    {/* ℹ SIDEBAR INFO */}
+                    {/* --- SIDEBAR INFO --- */}
                     <div className="space-y-8">
                          <div className=" sticky top-24">
                              <h3 className="text-lg font-bold dark:text-white mb-5 flex items-center gap-2">
@@ -645,10 +680,9 @@ const DownloadApp = () => {
                          </div>
                     </div>
                 </div>
-
             </div>
 
-            {/*  FLOATING ACTION BUTTON */}
+            {/* --- FLOATING ACTION BUTTON --- */}
             <button
                 onClick={scrollToForm}
                 className="fixed bottom-24 right-6 p-4 bg-[#01875f] hover:bg-[#017a56] text-white rounded-2xl shadow-2xl shadow-green-900/30 transition-transform hover:scale-110 active:scale-95 z-40 md:hidden"
@@ -666,7 +700,7 @@ const DownloadApp = () => {
                 isDanger={true}
                 loading={loading}
                 confirmationText={null} 
-                >
+            >
                 <p className="text-gray-600 dark:text-gray-300 text-sm">
                     Are you sure you want to delete your review? 
                 </p>

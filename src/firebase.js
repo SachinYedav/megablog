@@ -1,67 +1,69 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { getMessaging, getToken } from "firebase/messaging";
+import conf from './conf/conf.js'; 
 
+// 1. CONFIGURATION
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: conf.firebaseApiKey,
+  authDomain: conf.firebaseAuthDomain,
+  projectId: conf.firebaseProjectId,
+  storageBucket: conf.firebaseStorageBucket,
+  messagingSenderId: conf.firebaseMessagingSenderId,
+  appId: conf.firebaseAppId,
 };
 
-// 1. Singleton App Initialization
+// 2. SINGLETON APP INITIALIZATION
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// 2. Auth Instance
+// 3. AUTH INSTANCE
 const auth = getAuth(app);
 
-// 3. Messaging Instance 
+// 4. MESSAGING INSTANCE 
 let messaging = null;
 
-if (typeof window !== "undefined" && typeof navigator !== "undefined") {
+if (typeof window !== "undefined") {
   try {
     messaging = getMessaging(app);
-    console.log("✅ Firebase Messaging Initialized");
   } catch (err) {
-    console.error("❌ Firebase Messaging Failed:", err);
+    console.error("❌ Firebase Messaging Init Failed:", err);
   }
 }
 
-// 4. Helper: Get Token (With Logging)
+// ============================================================
+// 5. HELPER: REQUEST FCM TOKEN 
+// ============================================================
 export const requestFcmToken = async () => {
   try {
     if (!messaging) return null;
-    
-    // Permission maango
+
+    // A. Permission Check
     const permission = await Notification.requestPermission();
     if (permission !== "granted") {
       console.warn("🚫 Notification Permission Denied");
       return null;
     }
 
-    const token = await getToken(messaging, {
-      vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
-    });
+    // B. Service Worker Retrieval 
+    const registration = await navigator.serviceWorker.getRegistration();
     
-    console.log("🪙 FCM Token:", token ? "Generated" : "Failed");
+    if (!registration) {
+       console.error("❌ Service Worker not found. PWA might not be active.");
+       return null;
+    }
+
+    // C. Token Generation
+    const token = await getToken(messaging, {
+      vapidKey: conf.firebaseVapidKey,
+      serviceWorkerRegistration: registration, 
+    });
+
     return token;
+
   } catch (error) {
-    console.error("❌ Token Error:", error);
+    console.error("❌ Token Generation Failed:", error);
     return null;
   }
-};
-
-// 5. Helper: Foreground Listener 
-export const onForegroundMessage = () => {
-  return new Promise((resolve) => {
-    if (!messaging) return;
-    onMessage(messaging, (payload) => {
-      console.log("🔥 MESSAGE CAUGHT IN FIREBASE.JS:", payload);
-      resolve(payload);
-    });
-  });
 };
 
 export { app, auth, messaging };

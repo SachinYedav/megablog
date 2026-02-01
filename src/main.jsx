@@ -9,7 +9,6 @@ import { HelmetProvider } from "react-helmet-async";
 
 // Styles
 import "./index.css";
-
 // Core Components
 import App from "./App.jsx";
 import AppLayout from "./layouts/AppLayout.jsx";

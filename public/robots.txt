@@ -12,4 +12,4 @@ Disallow: /forgot-password
 
 
 #  Sitemap Location
-Sitemap: https://megablog-delta.vercel.app/sitemap.xml
+Sitemap: https://magablog.vercel.app/sitemap.xml

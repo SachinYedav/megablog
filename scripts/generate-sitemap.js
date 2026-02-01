@@ -8,7 +8,7 @@ import confNode from '../src/conf/conf-node.js';
 // ==================================================================
 //  CONFIGURATION 
 // ==================================================================
-const DOMAIN = 'https://megablog-delta.vercel.app'; 
+const DOMAIN = 'https://magablog.vercel.app/'; 
 
 async function generateSitemap() {
   console.log("🗺️  Starting Sitemap Generation...");

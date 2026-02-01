@@ -125,12 +125,12 @@ export class AuthService {
       if (!token) return false;
       const providerId = import.meta.env.VITE_APPWRITE_FCM_PROVIDER_ID;
       
-      // 1. Check LocalStorage (Optimization)
+      // 1. Check LocalStorage 
       const savedId = localStorage.getItem("push_target_id");
       const savedToken = localStorage.getItem("fcm_token_cache");
 
       if (savedId && savedToken === token) {
-          return true; // Already synced
+          return true; 
       }
 
       // 2. Optimistic Creation
@@ -148,7 +148,7 @@ export class AuthService {
           return true;
 
       } catch (serverError) {
-          // 3. Handle Conflict (Target already exists - Error 409)
+          // 3. Handle Conflict 
           if (serverError.code === 409 || serverError.type === 'general_argument_invalid') {
               console.log("⚠️ Target exists on server. Fetching ID for sync...");
               

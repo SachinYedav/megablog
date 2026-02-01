@@ -61,7 +61,7 @@ export default defineConfig({
       // 2. WORKBOX STRATEGIES (Caching Logic)
       // ----------------------------------------------------------
       workbox: {
-        globIgnores: ["**/firebase-messaging-sw.js"],
+        importScripts: ["firebase-messaging-sw.js"],
         navigateFallback: '/index.html',
         runtimeCaching: [
           // A. Appwrite Images (Cache First / StaleWhileRevalidate)
