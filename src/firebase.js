@@ -44,8 +44,8 @@ export const requestFcmToken = async () => {
       return null;
     }
 
-    // B. Service Worker Retrieval 
-    const registration = await navigator.serviceWorker.getRegistration();
+    // B. Service Worker Retrieval (FIXED: Waits for SW to be active)
+    const registration = await navigator.serviceWorker.ready;
     
     if (!registration) {
        console.error("❌ Service Worker not found. PWA might not be active.");
@@ -61,7 +61,8 @@ export const requestFcmToken = async () => {
     return token;
 
   } catch (error) {
-    console.error("❌ Token Generation Failed:", error);
+    // Suppress retry errors to prevent crash loops
+    console.error("❌ Token Generation Failed:", error.message);
     return null;
   }
 };

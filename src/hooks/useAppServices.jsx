@@ -129,12 +129,20 @@ export const usePushNotifications = (isOnline, playSound) => {
   const [incomingMessage, setIncomingMessage] = useState(null);
   const userData = useSelector((state) => state.auth.userData);
   const navigate = useNavigate();
+  
+  // LOCKS: Prevent race conditions
+  const isPushInitialized = useRef(false);
   const isListenerAttached = useRef(false);
 
-  // Setup Listener
+  // Setup Listener & Token
   useEffect(() => {
     if (!userData || !isOnline || !messaging) return;
-    
+    if (!('serviceWorker' in navigator)) return;
+
+    // Safety Lock
+    if (isPushInitialized.current) return;
+    isPushInitialized.current = true;
+
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.ready.then((reg) => {
             console.log("⚙️ Service Worker Active:", reg.scope);
@@ -142,13 +150,23 @@ export const usePushNotifications = (isOnline, playSound) => {
     }
 
     const initPushSystem = async () => {
-        const token = await requestFcmToken();
-        if (token) {
-            await authService.createPushTarget(token);
+        try {
+            // Wait for SW Ready State
+            await navigator.serviceWorker.ready;
+            
+            const token = await requestFcmToken();
+            if (token) {
+                await authService.createPushTarget(token);
+            }
+        } catch (e) {
+            console.warn("Push Init Deferred:", e.message);
         }
     };
-    initPushSystem();
+    
+    // Add small delay to unblock main thread & allow PWA detection
+    setTimeout(initPushSystem, 1500);
 
+    // Listener Logic
     if (isListenerAttached.current) return;
     isListenerAttached.current = true;
 
