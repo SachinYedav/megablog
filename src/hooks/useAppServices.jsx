@@ -106,7 +106,6 @@ export const useAuthSession = () => {
             } 
           }));
         } else {
-          // CHECK: Only logout if internet is working
           if (navigator.onLine) {
             dispatch(logout());
           }
@@ -143,7 +142,6 @@ export const usePushNotifications = (isOnline, playSound) => {
     if (isPushInitialized.current) return;
     isPushInitialized.current = true;
 
-    // Log scope for debug
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then((reg) => {
          console.log("⚙️ SW Scope:", reg.scope);
@@ -162,8 +160,8 @@ export const usePushNotifications = (isOnline, playSound) => {
         }
     };
     
-    // Safety Delay
-    setTimeout(initPushSystem, 2000);
+    // Call init safely
+    initPushSystem();
 
     // Listener Logic
     if (isListenerAttached.current) return;
@@ -174,8 +172,6 @@ export const usePushNotifications = (isOnline, playSound) => {
 
         const notification = payload.notification || {};
         const data = payload.data || {};
-        
-        // Better Parsing for Appwrite/Firebase Mixed Payloads
         const finalTitle = notification.title || data.title || data.custom_title || "Notification";
         const finalBody = notification.body || data.body || data.message || data.custom_body || "New update received";
         const finalImage = notification.image || data.image || data.custom_image || null;

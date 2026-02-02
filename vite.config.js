@@ -14,7 +14,7 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: [
-          "icons/favicon.ico", 
+          "favicon.ico", 
           "icons/apple-touch-icon.png", 
           "icons/logo.png", 
           "icons/badge-logo.png" 
@@ -54,7 +54,7 @@ export default defineConfig({
             purpose: "maskable"
           },
         ],
-         badge: "/icons/badge-logo.png"
+        badge: "/icons/badge-logo.png"
       },
 
       // ----------------------------------------------------------
@@ -63,6 +63,10 @@ export default defineConfig({
       workbox: {
         importScripts: ["firebase-messaging-sw.js"],
         navigateFallback: '/index.html',
+        cleanupOutdatedCaches: true, 
+        clientsClaim: true, 
+        skipWaiting: true,  
+
         runtimeCaching: [
           // A. Appwrite Images (Cache First / StaleWhileRevalidate)
           {
@@ -76,6 +80,7 @@ export default defineConfig({
               },
             },
           },
+
           // B. Appwrite Auth/Account Caching 
           {
             urlPattern: /^https:\/\/cloud\.appwrite\.io\/v1\/account/,
@@ -86,11 +91,11 @@ export default defineConfig({
                 maxEntries: 1,
                 maxAgeSeconds: 60 * 60 * 24 * 7, 
               },
-              networkTimeoutSeconds: 3,
+              networkTimeoutSeconds: 10, 
             },
           },
 
-          // c. Appwrite API Data (Network First)
+          // C. Appwrite API Data 
           {
             urlPattern: /^https:\/\/cloud\.appwrite\.io\/v1\/databases/,
             handler: "NetworkFirst",
@@ -100,7 +105,7 @@ export default defineConfig({
                 maxEntries: 50,
                 maxAgeSeconds: 60 * 60 * 24, // 1 Day
               },
-              networkTimeoutSeconds: 3, 
+              networkTimeoutSeconds: 10,
             },
           },
 
@@ -121,9 +126,6 @@ export default defineConfig({
     sourcemap: false, 
   },
 
-  // ============================================================
-  //  SERVER CONFIGURATION
-  // ============================================================
   server: {
     host: true, 
     port: 5173,
