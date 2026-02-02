@@ -84,7 +84,7 @@ export const useAuthSession = () => {
           try { 
               userProfile = await appwriteService.getUserProfile(user.$id); 
           } catch(e) {
-              console.warn("⚠️ Profile Fetch Failed (New User?)");
+              console.warn("⚠️ Profile Fetch Failed");
           }
           
           if(!userProfile) {
@@ -95,9 +95,7 @@ export const useAuthSession = () => {
                      name: nameToUse, 
                      email: user.email 
                  }); 
-             } catch(e) {
-                 console.error("Profile Create Error:", e);
-             }
+             } catch(e) {}
           }
 
           dispatch(login({ 
@@ -108,7 +106,10 @@ export const useAuthSession = () => {
             } 
           }));
         } else {
-          dispatch(logout());
+          // CHECK: Only logout if internet is working
+          if (navigator.onLine) {
+            dispatch(logout());
+          }
         }
       } catch (error) {
         console.error("❌ Session Check Error:", error);
@@ -124,36 +125,34 @@ export const useAuthSession = () => {
   return { loading };
 };
 
+
 // --- 4. Push Notification Logic ---
 export const usePushNotifications = (isOnline, playSound) => {
   const [incomingMessage, setIncomingMessage] = useState(null);
   const userData = useSelector((state) => state.auth.userData);
   const navigate = useNavigate();
   
-  // LOCKS: Prevent race conditions
   const isPushInitialized = useRef(false);
   const isListenerAttached = useRef(false);
 
-  // Setup Listener & Token
   useEffect(() => {
     if (!userData || !isOnline || !messaging) return;
     if (!('serviceWorker' in navigator)) return;
 
-    // Safety Lock
+    // Initialization Lock
     if (isPushInitialized.current) return;
     isPushInitialized.current = true;
 
+    // Log scope for debug
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.ready.then((reg) => {
-            console.log("⚙️ Service Worker Active:", reg.scope);
-        });
+      navigator.serviceWorker.ready.then((reg) => {
+         console.log("⚙️ SW Scope:", reg.scope);
+      });
     }
 
     const initPushSystem = async () => {
         try {
-            // Wait for SW Ready State
             await navigator.serviceWorker.ready;
-            
             const token = await requestFcmToken();
             if (token) {
                 await authService.createPushTarget(token);
@@ -163,25 +162,33 @@ export const usePushNotifications = (isOnline, playSound) => {
         }
     };
     
-    // Add small delay to unblock main thread & allow PWA detection
-    setTimeout(initPushSystem, 1500);
+    // Safety Delay
+    setTimeout(initPushSystem, 2000);
 
     // Listener Logic
     if (isListenerAttached.current) return;
     isListenerAttached.current = true;
 
     const unsubscribe = onMessage(messaging, (payload) => {
+        console.log("🔥 Foreground Message Received:", payload); 
+
         const notification = payload.notification || {};
         const data = payload.data || {};
+        
+        // Better Parsing for Appwrite/Firebase Mixed Payloads
+        const finalTitle = notification.title || data.title || data.custom_title || "Notification";
+        const finalBody = notification.body || data.body || data.message || data.custom_body || "New update received";
+        const finalImage = notification.image || data.image || data.custom_image || null;
         const avatarUrl = data.sender_avatar || data.senderAvatar || data.icon || "/icons/logo.png";
+        const linkUrl = data.click_action || data.link || data.url || '/';
 
         const msg = {
             id: Date.now(),
-            title: notification.title || data.custom_title || "Notification",
-            body: notification.body || data.custom_body || "You have a new message",
-            image: data.custom_image || data.image || null,
+            title: finalTitle,
+            body: finalBody,
+            image: finalImage,
             avatar: avatarUrl, 
-            link: data.click_action || data.link || '/',
+            link: linkUrl,
         };
         setIncomingMessage(msg);
     });
@@ -195,7 +202,7 @@ export const usePushNotifications = (isOnline, playSound) => {
   // Handle Toast Display
   useEffect(() => {
     if (!incomingMessage) return;
-    playSound(); 
+    try { playSound(); } catch(e) {}
 
     toast.custom((t) => (
       <div 
@@ -221,34 +228,28 @@ export const usePushNotifications = (isOnline, playSound) => {
         }} 
       >
         <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", width: "100%" }}>
-            {/* Avatar */}
             <div style={{ flexShrink: 0 }}>
                <img 
                  src={incomingMessage.avatar} 
-                 alt="👤" 
+                 alt="Icon" 
                  style={{ width: "36px", height: "36px", borderRadius: "50%", objectFit: "cover", border: "1px solid #475569" }} 
                  onError={(e) => e.target.src = "/icons/logo.png"} 
                />
             </div>
-
-            {/* Text Content */}
             <div style={{ flex: 1 }}>
                <h4 style={{ margin: "0 0 4px 0", fontSize: "15px", fontWeight: "700", lineHeight: "1.2" }}>{incomingMessage.title}</h4>
                <p style={{ margin: 0, fontSize: "13px", color: "#cbd5e1", lineHeight: "1.4" }}>{incomingMessage.body}</p>
             </div>
-
-            {/* Close Button */}
             <button onClick={(e) => { e.stopPropagation(); toast.dismiss(t.id); }} style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", padding: "4px", marginTop: "-4px" }}>
                 <X size={18} />
             </button>
         </div>
-
         {incomingMessage.image && (
             <div style={{ width: "100%", height: "180px", borderRadius: "10px", overflow: "hidden", marginTop: "4px" }}>
                 <img 
                     src={incomingMessage.image} 
                     style={{ width: "100%", height: "100%", objectFit: "cover" }} 
-                    alt="Notification Attachment" 
+                    alt="Attachment" 
                 />
             </div>
         )}

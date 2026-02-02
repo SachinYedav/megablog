@@ -76,8 +76,21 @@ export default defineConfig({
               },
             },
           },
+          // B. Appwrite Auth/Account Caching 
+          {
+            urlPattern: /^https:\/\/cloud\.appwrite\.io\/v1\/account/,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "appwrite-auth-data",
+              expiration: {
+                maxEntries: 1,
+                maxAgeSeconds: 60 * 60 * 24 * 7, 
+              },
+              networkTimeoutSeconds: 3,
+            },
+          },
 
-          // B. Appwrite API Data (Network First)
+          // c. Appwrite API Data (Network First)
           {
             urlPattern: /^https:\/\/cloud\.appwrite\.io\/v1\/databases/,
             handler: "NetworkFirst",
@@ -91,7 +104,7 @@ export default defineConfig({
             },
           },
 
-          // C. Static Assets & Fonts (Cache First)
+          // D. Static Assets & Fonts (Cache First)
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com/,
             handler: "CacheFirst",

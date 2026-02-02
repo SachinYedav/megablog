@@ -10,7 +10,7 @@ const firebaseConfig = {
   authDomain: "megablog-dca34.firebaseapp.com",
   projectId: "megablog-dca34",
   storageBucket: "megablog-dca34.firebasestorage.app",
-  messagingSenderId: "192322056633",
+  messagingSenderId: "192322056633", 
   appId: "1:192322056633:web:98d4360e5424b914d4c668",
   measurementId: "G-1DNNQRRQKP"
 };
@@ -27,13 +27,13 @@ messaging.onBackgroundMessage((payload) => {
   const notification = payload.notification || {};
   const data = payload.data || {};
 
-  // 1. Title & Body
-  const title = notification.title || data.custom_title || 'MegaBlog Update';
-  const body = notification.body || data.custom_body || 'You have a new update.';
-  const bigImage = data.custom_image || data.image || null; 
+  // 1. Unified Parsing Logic
+  const title = notification.title || data.title || data.custom_title || 'MegaBlog Update';
+  const body = notification.body || data.body || data.message || data.custom_body || 'You have a new update.';
+  const bigImage = notification.image || data.image || data.custom_image || null; 
   const smallIcon = data.sender_avatar || data.senderAvatar || '/icons/pwa-192x192.png';
-  // 3. Action URL
-  const clickAction = data.click_action || '/';
+  
+  const clickAction = data.click_action || data.link || data.url || '/';
 
   const notificationOptions = {
     body: body,
@@ -53,11 +53,11 @@ messaging.onBackgroundMessage((payload) => {
 });
 
 // =================================================================
-// CLICK HANDLER (System Notification Click)
+// CLICK HANDLER
 // =================================================================
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
-  // URL nikalna
+  
   const urlToOpen = event.notification.data?.url || '/';
 
   event.waitUntil(
@@ -66,9 +66,7 @@ self.addEventListener('notificationclick', function(event) {
         const clientUrl = new URL(client.url, self.location.origin);
         const targetUrl = new URL(urlToOpen, self.location.origin);
         
-        // Check if origin matches
         if (clientUrl.hostname === targetUrl.hostname && 'focus' in client) {
-            // Agar path alag hai to navigate karo
             if (clientUrl.pathname !== targetUrl.pathname) {
                 return client.navigate(urlToOpen).then(c => c.focus());
             }
