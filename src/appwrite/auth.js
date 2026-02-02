@@ -133,7 +133,7 @@ export class AuthService {
           return true; 
       }
 
-      // 2. Optimistic Creation
+      // 2. Try to Create New Target
       try {
           const target = await this.account.createPushTarget(
             ID.unique(),
@@ -141,7 +141,7 @@ export class AuthService {
             providerId
           );
           
-          // Success: Save ID
+          // Success: Save ID & Token
           localStorage.setItem("push_target_id", target.$id);
           localStorage.setItem("fcm_token_cache", token);
           console.log("✅ Push Target Created:", target.$id);
@@ -150,21 +150,9 @@ export class AuthService {
       } catch (serverError) {
           // 3. Handle Conflict 
           if (serverError.code === 409 || serverError.type === 'general_argument_invalid') {
-              console.log("⚠️ Target exists on server. Fetching ID for sync...");
+              console.log("⚠️ Token already active on server. Skipping creation.");
+              localStorage.setItem("fcm_token_cache", token);
               
-              try {
-                  const list = await this.account.listTargets();
-                  const existingTarget = list.targets.find(t => t.identifier === token && t.providerId === providerId);
-                  
-                  if (existingTarget) {
-                      localStorage.setItem("push_target_id", existingTarget.$id);
-                      localStorage.setItem("fcm_token_cache", token);
-                      console.log("♻️ Synced ID from Server:", existingTarget.$id);
-                      return true;
-                  }
-              } catch (e) {
-                  console.warn("Sync warning:", e);
-              }
               return true; 
           }
           throw serverError;
