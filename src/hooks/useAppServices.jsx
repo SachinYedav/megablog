@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
@@ -29,11 +29,11 @@ export const useAudioUnlock = () => {
     return () => window.removeEventListener('click', unlockAudio);
   }, []);
 
-  const playSound = () => {
+  const playSound = useCallback(() => {
     audioInstance.currentTime = 0;
     audioInstance.volume = 1.0;
     audioInstance.play().catch(e => console.warn("🔊 Audio blocked"));
-  };
+  }, []);
 
   return { playSound };
 };
