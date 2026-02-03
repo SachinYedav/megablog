@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { 
     Star, Download, ShieldCheck, Smartphone, Monitor, Share2, 
-    ChevronDown, ChevronRight, X, Check, Lock, Trash2, 
-    MessageSquarePlus, MoreVertical, Edit2, Trash, CheckCircle2 
+    ChevronDown, X, Check, Lock, Trash2, 
+    MessageSquarePlus, MoreVertical, Edit2, Trash, CheckCircle2 ,
+    FileText, LayoutList, AlertCircle, ChevronLeft, ChevronRight
 } from "lucide-react";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate, Link } from "react-router-dom"; 
 import { Helmet } from "react-helmet-async";
 import toast from "react-hot-toast";
 
@@ -13,32 +14,69 @@ import appwriteService from "../appwrite/config";
 import { Modal } from "../components/index";
 
 // ==========================================
-// 1. SUB-COMPONENT: SCREENSHOT LIGHTBOX
+// 1. SUB-COMPONENT: SCREENSHOT LIGHTBOX VIWER
 // ==========================================
 const ScreenshotViewer = ({ images, initialIndex, onClose }) => {
+    const [currentIndex, setCurrentIndex] = useState(initialIndex || 0);
+    const scrollRef = useRef(null);
+
+    useEffect(() => {
+        if (scrollRef.current && scrollRef.current.children[currentIndex]) {
+            scrollRef.current.children[currentIndex].scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+                inline: 'center'
+            });
+        }
+    }, [currentIndex]);
+
     if (initialIndex === null) return null;
+
+    const handleNext = () => {
+        if (currentIndex < images.length - 1) setCurrentIndex(prev => prev + 1);
+    };
+
+    const handlePrev = () => {
+        if (currentIndex > 0) setCurrentIndex(prev => prev - 1);
+    };
 
     return (
        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex flex-col animate-in fade-in duration-300">
             {/* Toolbar */}
-            <div className="flex justify-between items-center p-6 text-white bg-gradient-to-b from-black/50 to-transparent">
-                <span className="text-sm font-medium tracking-wide">{initialIndex + 1} / {images.length}</span>
-                <button 
-                    onClick={onClose} 
-                    className="p-2 hover:bg-white/20 rounded-full transition-colors active:scale-95"
-                    aria-label="Close Viewer"
-                >
+            <div className="flex justify-between items-center p-6 text-white bg-gradient-to-b from-black/50 to-transparent absolute top-0 w-full z-20">
+                <span className="text-sm font-medium tracking-wide">{currentIndex + 1} / {images.length}</span>
+                <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full transition-colors active:scale-95">
                     <X className="w-6 h-6" />
                 </button>
             </div>
             
+            {/* Navigation Buttons */}
+            <button 
+                onClick={handlePrev} 
+                disabled={currentIndex === 0}
+                className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white transition-all disabled:opacity-0 disabled:pointer-events-none"
+            >
+                <ChevronLeft className="w-8 h-8" />
+            </button>
+
+            <button 
+                onClick={handleNext} 
+                disabled={currentIndex === images.length - 1}
+                className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white transition-all disabled:opacity-0 disabled:pointer-events-none"
+            >
+                <ChevronRight className="w-8 h-8" />
+            </button>
+
             {/* Image Container */}
-            <div className="flex-1 overflow-x-auto flex items-center gap-8 px-8 snap-x snap-mandatory scrollbar-hide">
+            <div 
+                ref={scrollRef}
+                className="flex-1 overflow-x-auto flex items-center gap-8 px-8 snap-x snap-mandatory scrollbar-hide w-full h-full"
+            >
                 {images.map((img, idx) => (
-                    <div key={idx} className="w-full flex-shrink-0 snap-center flex justify-center h-full py-8">
+                    <div key={idx} className="w-full h-full flex-shrink-0 snap-center flex justify-center items-center py-8 relative">
                         <img 
                             src={img} 
-                            className="max-h-[85vh] max-w-full object-contain rounded-lg shadow-2xl transition-transform duration-300" 
+                            className="max-h-[85vh] max-w-full object-contain rounded-lg shadow-2xl" 
                             alt={`Screen ${idx + 1}`} 
                         />
                     </div>
@@ -47,6 +85,7 @@ const ScreenshotViewer = ({ images, initialIndex, onClose }) => {
        </div>
     );
 };
+
 
 // ==========================================
 // 2. SUB-COMPONENT: RATING STATS
@@ -103,9 +142,9 @@ const DataSafetyCard = () => {
         <div className="border dark:border-gray-800 rounded-xl overflow-hidden mb-8 transition-all duration-300 hover:border-gray-300 dark:hover:border-gray-700">
             <button 
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex justify-between items-center p-5 bg-white dark:bg-gray-950 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
-                aria-expanded={isOpen}
-            >
+               className="w-full flex justify-between items-center p-5 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    aria-expanded={isOpen}
+                >
                 <div className="flex items-center gap-4">
                     <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                         <ShieldCheck className="w-6 h-6 text-blue-600 dark:text-blue-400" />
@@ -148,6 +187,58 @@ const DataSafetyCard = () => {
 };
 
 // ==========================================
+// 3.5. SUB-COMPONENT: PERMISSIONS CARD 
+// ==========================================
+const PermissionsCard = () => {
+    const [isOpen, setIsOpen] = useState(false);
+    
+    return (
+        <div className="border dark:border-gray-800 rounded-xl overflow-hidden transition-all duration-300 hover:border-gray-300 dark:hover:border-gray-700 mt-2">
+            <button 
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full flex justify-between items-center p-4 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    aria-expanded={isOpen}
+                >
+                <div className="flex items-center gap-3">
+                    <div className="p-1.5 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                        <Smartphone className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div className="text-left">
+                        <h3 className="font-bold text-gray-900 dark:text-white text-sm">App permissions</h3>
+                        <p className="text-[10px] text-gray-500">Camera, Storage, Network</p>
+                    </div>
+                </div>
+                {isOpen ? <ChevronDown className="dark:text-white w-4 h-4 rotate-180 transition-transform" /> : <ChevronRight className="dark:text-white w-4 h-4" />}
+            </button>
+
+            {isOpen && (
+                <div className="p-4 bg-gray-50 dark:bg-gray-900/30 text-sm animate-in slide-in-from-top-2 border-t dark:border-gray-800">
+                    <ul className="space-y-3">
+                        {[
+                            { l: "Camera", d: "Take pictures for profile avatar" },
+                            { l: "Storage", d: "Read/Write for offline content" },
+                            { l: "Network", d: "Sync data with cloud server" },
+                            { l: "Notifications", d: "Receive updates & alerts" }
+                        ].map((item, idx) => (
+                            <li key={idx} className="flex items-start gap-3">
+                                <span className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5 shrink-0"></span>
+                                <div>
+                                    <p className="font-semibold text-gray-900 dark:text-gray-200 text-xs">{item.l}</p>
+                                    <p className="text-gray-500 text-[10px]">{item.d}</p>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                    <button className="mt-3 text-purple-600 dark:text-purple-400 font-medium text-xs hover:underline">
+                        See more
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+};
+
+// ==========================================
 // 4. MAIN PAGE COMPONENT
 // ==========================================
 const DownloadApp = () => {
@@ -158,7 +249,6 @@ const DownloadApp = () => {
     // States
     const [activeTab, setActiveTab] = useState("mobile"); 
     const [viewImageIndex, setViewImageIndex] = useState(null);
-    const [showPermissions, setShowPermissions] = useState(false);
     const [loading, setLoading] = useState(true);
 
     const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -173,8 +263,10 @@ const DownloadApp = () => {
     const [reviewToDelete, setReviewToDelete] = useState(null);
     const [showMenuId, setShowMenuId] = useState(null);
 
-    const mobileScreens = useMemo(() => ["/screenshots/screenshot-mobile.png", "/screenshots/screenshot-mobile.png", "/screenshots/screenshot-mobile.png"], []); 
-    const desktopScreens = useMemo(() => ["/screenshots/Desktopview.png", "/screenshots/Desktopview1.png"], []);
+    const mobileScreens = useMemo(() => ["/screenshots/mhomepage.jpeg", "/screenshots/msubscriptionspage.jpg", 
+         "/screenshots/mpostpage.jpg", "/screenshots/mprofilepage.jpg", "/screenshots/msettingspage.jpg",], []); 
+    const desktopScreens = useMemo(() => ["/screenshots/dhomepage.png", "screenshots/dpostpage.png", "/screenshots/dprofilepage.png", 
+        "/screenshots/daddpostpage.png",  "screenshots/dhelppage.png"], []);
 
     // ============================================================
     // LIFECYCLE: PWA INSTALLATION LOGIC
@@ -301,6 +393,20 @@ const DownloadApp = () => {
         }
     };
 
+    const scrollContainerRef = useRef(null);
+
+    const scrollCarousel = (direction) => {
+        if (scrollContainerRef.current) {
+            const { current } = scrollContainerRef;
+            const scrollAmount = 300; 
+            if (direction === 'left') {
+                current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+            } else {
+                current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+            }
+        }
+    };
+
     const handleReviewAction = useCallback(async (action) => {
         if (!userData) return toast.error("Please login first");
         
@@ -345,7 +451,7 @@ const DownloadApp = () => {
     const avgRating = useMemo(() => reviews.length > 0 ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) : "New", [reviews]);
 
     return (
-        <div className="min-h-screen bg-white dark:bg-[#09090b] pt-24 pb-24 px-4 font-sans text-slate-900 dark:text-slate-50">
+        <div className="min-h-screen bg-white dark:bg-gray-900 pt-24 pb-24 px-4 font-sans text-slate-900 dark:text-slate-50">
             <Helmet>
                 <title>Download MegaBlog - Official App</title>
                 <meta name="description" content="Download the official MegaBlog app for the best reading and writing experience." />
@@ -426,7 +532,8 @@ const DownloadApp = () => {
                 </div>
 
                 {/* --- SCREENSHOTS --- */}
-                <div className="mb-12 overflow-hidden">
+                <div className="mb-12">
+                    {/* Tabs */}
                     <div className="flex gap-8 mb-6 overflow-x-auto pb-2 scrollbar-hide border-b dark:border-gray-800">
                         {['mobile', 'desktop'].map((tab) => (
                             <button 
@@ -444,18 +551,47 @@ const DownloadApp = () => {
                         ))}
                     </div>
 
-                    <div className="flex gap-5 overflow-x-auto pb-8 scrollbar-hide snap-x cursor-zoom-in">
-                        {(activeTab === "mobile" ? mobileScreens : desktopScreens).map((src, idx) => (
-                            <div key={idx} onClick={() => setViewImageIndex(idx)} className="relative group shrink-0 snap-start">
-                                 <img 
-                                    src={src} 
-                                    className={`rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 transition-all duration-300 group-hover:scale-[1.02] ${
-                                        activeTab === 'mobile' ? 'h-[420px] w-auto' : 'h-[320px] w-auto'
-                                    }`} 
-                                    alt={`Screenshot ${idx + 1}`} 
-                                 />
-                            </div>
-                        ))}
+                    {/* Carousel Container  */}
+                    <div className="relative group">
+                        
+                        {/* Left Button */}
+                        <button 
+                            onClick={() => scrollCarousel('left')}
+                            className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-white/80 dark:bg-black/80 backdrop-blur shadow-lg rounded-full text-gray-800 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity -ml-4 hover:scale-110"
+                            aria-label="Scroll Left"
+                        >
+                            <ChevronLeft className="w-6 h-6" />
+                        </button>
+
+                        {/* Right Button */}
+                        <button 
+                            onClick={() => scrollCarousel('right')}
+                            className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 bg-white/80 dark:bg-black/80 backdrop-blur shadow-lg rounded-full text-gray-800 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity -mr-4 hover:scale-110"
+                            aria-label="Scroll Right"
+                        >
+                            <ChevronRight className="w-6 h-6" />
+                        </button>
+
+                        {/* Scrollable Area */}
+                        <div 
+                            ref={scrollContainerRef}
+                            className="flex gap-5 overflow-x-auto pb-8 scrollbar-hide snap-x cursor-zoom-in scroll-smooth"
+                        >
+                            {(activeTab === "mobile" ? mobileScreens : desktopScreens).map((src, idx) => (
+                                <div key={idx} onClick={() => setViewImageIndex(idx)} className="relative group/img shrink-0 snap-start cursor-pointer">
+                                     <img 
+                                        src={src} 
+                                        className={`rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 transition-all duration-300 group-hover/img:scale-[1.02] ${
+                                            activeTab === 'mobile' ? 'h-[420px] w-auto' : 'h-[320px] w-auto'
+                                        }`} 
+                                        alt={`Screenshot ${idx + 1}`} 
+                                     />
+                                     {/* Hover Overlay Icon */}
+                                     <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors rounded-2xl flex items-center justify-center">
+                                     </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
@@ -513,11 +649,11 @@ const DownloadApp = () => {
                                     </div>
                                 ) : (alreadyReviewed && !editingId) ? (
                                     <div className="flex flex-col items-center py-6 animate-in zoom-in-95">
-                                         <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-3">
-                                            <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
-                                         </div>
-                                         <h3 className="font-bold dark:text-white text-lg">Thanks for sharing!</h3>
-                                         <p className="text-sm text-gray-500">Your review helps others make better decisions.</p>
+                                        <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-3">
+                                        <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
+                                        </div>
+                                        <h3 className="font-bold dark:text-white text-lg">Thanks for sharing!</h3>
+                                        <p className="text-sm text-gray-500">Your review helps others make better decisions.</p>
                                     </div>
                                 ) : (
                                     <>
@@ -533,7 +669,7 @@ const DownloadApp = () => {
                                         </div>
                                         
                                         <textarea 
-                                            className="w-full bg-white dark:bg-black border border-gray-200 dark:border-gray-700 rounded-xl p-4 text-sm focus:ring-2 focus:ring-[#01875f] outline-none dark:text-white resize-none shadow-sm transition-shadow"
+                                            className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 text-sm focus:ring-2 focus:ring-[#01875f] outline-none dark:text-white resize-none shadow-sm transition-shadow"
                                             rows="4"
                                             placeholder="Describe your experience (optional)"
                                             value={reviewText}
@@ -640,45 +776,53 @@ const DownloadApp = () => {
                     </div>
 
                     {/* --- SIDEBAR INFO --- */}
-                    <div className="space-y-8">
-                         <div className=" sticky top-24">
-                             <h3 className="text-lg font-bold dark:text-white mb-5 flex items-center gap-2">
-                                 App Support
-                             </h3>
-                             <div className="space-y-4 text-sm">
-                                 {[
-                                     { l: "Version", v: "2.0.1 (Latest)" },
-                                     { l: "Updated on", v: "Jan 26, 2026" },
-                                     { l: "Downloads", v: "10,000+" },
-                                     { l: "Required OS", v: "Android 8.0 / iOS 14.0" },
-                                     { l: "Offered by", v: "MegaBlog Inc." },
-                                     { l: "Released on", v: "Oct 24, 2023" },
-                                 ].map((item, idx) => (
-                                     <div key={idx} className="flex justify-between border-b dark:border-gray-800 pb-3 last:border-0">
-                                         <span className="text-gray-500">{item.l}</span>
-                                         <span className="font-medium dark:text-gray-200 text-right">{item.v}</span>
-                                     </div>
-                                 ))}
-                                 
-                                 <div className="pt-2">
-                                     <button 
-                                         onClick={() => setShowPermissions(!showPermissions)}
-                                         className="w-full flex justify-between items-center text-gray-900 dark:text-white font-medium hover:bg-gray-50 dark:hover:bg-gray-800 p-2 -mx-2 rounded-lg transition-colors"
-                                     >
-                                         <span>App Permissions</span>
-                                         <ChevronDown className={`w-4 h-4 transition-transform ${showPermissions ? 'rotate-180' : ''}`} />
-                                     </button>
-                                     {showPermissions && (
-                                         <div className="mt-2 pl-2 space-y-2 text-xs text-gray-600 dark:text-gray-400 border-l-2 border-gray-200 dark:border-gray-700 animate-in slide-in-from-top-2">
-                                             <p>• Camera (for uploading avatars)</p>
-                                             <p>• Storage (for offline reading)</p>
-                                             <p>• Network (for data sync)</p>
-                                         </div>
-                                     )}
-                                 </div>
-                             </div>
-                         </div>
+                <div className="space-y-8">
+                    <div className="sticky top-24">
+                        <h3 className="text-lg font-bold dark:text-white mb-5 flex items-center gap-2">
+                            App Support
+                        </h3>
+                        
+                        {/* Info List */}
+                        <div className="space-y-4 text-sm mb-6">
+                            {[
+                                { l: "Version", v: "2.0.1 (Latest)" },
+                                { l: "Updated on", v: "Feb 03, 2026" },
+                                { l: "Downloads", v: "10,000+" },
+                                { l: "Required OS", v: "Android 8.0 / iOS 14.0" },
+                                { l: "Offered by", v: "MegaBlog Team" },
+                                { l: "Released on", v: "Jan 31, 2026" },
+                            ].map((item, idx) => (
+                                <div key={idx} className="flex justify-between border-b dark:border-gray-800 pb-3 last:border-0">
+                                    <span className="text-gray-500">{item.l}</span>
+                                    <span className="font-medium dark:text-gray-200 text-right">{item.v}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Links Section */}
+                        <div className="space-y-3 mb-6">
+                            <Link to="/help?tab=privacy" className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group">
+                                <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 transition-colors">
+                                    <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                </div>
+                                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Privacy Policy</span>
+                                <ChevronRight className="w-4 h-4 ml-auto text-gray-400" />
+                            </Link>
+
+                            <Link to="/help?tab=terms" className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group">
+                                <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg group-hover:bg-gray-200 dark:group-hover:bg-gray-700 transition-colors">
+                                    <FileText className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                                </div>
+                                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Terms of Service</span>
+                                <ChevronRight className="w-4 h-4 ml-auto text-gray-400" />
+                            </Link>
+                        </div>
+
+                        {/* Permissions Card */}
+                        <PermissionsCard />
+                        
                     </div>
+                </div>
                 </div>
             </div>
 

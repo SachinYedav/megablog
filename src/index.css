@@ -11,7 +11,16 @@
     @apply bg-white/70 dark:bg-gray-950/70 backdrop-blur-lg border border-white/20 shadow-xl;
   }
 }
+/* Chrome, Safari and Opera  */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
 
+/* IE, Edge and Firefox */
+.scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
 
 /* -------------------------------------------------------------------------- */
 /* CHAT BACKGROUND PATTERN                                                    */
