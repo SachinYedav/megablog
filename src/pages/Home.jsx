@@ -12,7 +12,7 @@ function Home() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get("tab") || "latest";
+  const activeTab = searchParams.get("tab") || "trending";
 
   const authStatus = useSelector((state) => state.auth.status);
   const userData = useSelector((state) => state.auth.userData);
@@ -139,20 +139,6 @@ const fetchFeed = useCallback(async () => {
 
         <div className="flex items-center gap-6 md:gap-8 border-b border-gray-200 dark:border-gray-800 mb-8 overflow-x-auto scrollbar-hide">
           <button
-            onClick={() => setSearchParams({ tab: "latest" })}
-            className={`pb-3 text-base md:text-lg font-bold flex items-center gap-2 transition-all relative whitespace-nowrap ${
-              activeTab === "latest"
-                ? "text-primary-light"
-                : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
-            }`}
-          >
-            <Clock size={18} /> Fresh Reads
-            {activeTab === "latest" && (
-              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-light rounded-t-full animate-in zoom-in"></span>
-            )}
-          </button>
-
-          <button
             onClick={() => setSearchParams({ tab: "trending" })}
             className={`pb-3 text-base md:text-lg font-bold flex items-center gap-2 transition-all relative whitespace-nowrap ${
               activeTab === "trending"
@@ -167,6 +153,19 @@ const fetchFeed = useCallback(async () => {
             Trending
             {activeTab === "trending" && (
               <span className="absolute bottom-0 left-0 w-full h-0.5 bg-orange-500 rounded-t-full animate-in zoom-in"></span>
+            )}
+          </button>
+          <button
+            onClick={() => setSearchParams({ tab: "latest" })}
+            className={`pb-3 text-base md:text-lg font-bold flex items-center gap-2 transition-all relative whitespace-nowrap ${
+              activeTab === "latest"
+                ? "text-primary-light"
+                : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+            }`}
+          >
+            <Clock size={18} /> Fresh Reads
+            {activeTab === "latest" && (
+              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-light rounded-t-full animate-in zoom-in"></span>
             )}
           </button>
         </div>
