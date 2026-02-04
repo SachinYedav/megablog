@@ -1,30 +1,94 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
-/* -------------------------------------------------------------------------- */
-/* UTILITIES & GLOBAL STYLES                                                 */
-/* -------------------------------------------------------------------------- */
+/* ========================================================================== */
+/* 1. UTILITIES & HELPER CLASSES                                              */
+/* ========================================================================== */
 
 @layer utilities {
   /* Glassmorphism Effect */
   .glass {
     @apply bg-white/70 dark:bg-gray-950/70 backdrop-blur-lg border border-white/20 shadow-xl;
   }
-}
-/* Chrome, Safari and Opera  */
-.scrollbar-hide::-webkit-scrollbar {
+
+  /* Utility: Force hide scrollbars on specific elements */
+  .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE/Edge */
+    scrollbar-width: none;     /* Firefox */
+  }
 }
 
-/* IE, Edge and Firefox */
-.scrollbar-hide {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+/* ========================================================================== */
+/* 2. APP-WIDE SCROLLBAR CONFIGURATION                                        */
+/* ========================================================================== */
+
+/* Default: Mobile First (Hidden Globally) */
+::-webkit-scrollbar {
+  display: none;
+  width: 0px;
+  background: transparent;
 }
 
-/* -------------------------------------------------------------------------- */
-/* CHAT BACKGROUND PATTERN                                                    */
-/* -------------------------------------------------------------------------- */
+html {
+  scrollbar-width: none;    /* Firefox Mobile */
+  -ms-overflow-style: none; /* IE/Edge Mobile */
+}
+
+/* Desktop Overrides (min-width: 768px) */
+@media (min-width: 768px) {
+
+  /* Reset Standard Properties for Firefox */
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+  }
+
+  .dark html {
+    scrollbar-color: #334155 transparent;
+  }
+
+  /* Webkit Scrollbar Dimensions */
+  ::-webkit-scrollbar {
+    display: block;
+    width: 8px;
+    height: 8px;
+  }
+
+  /* Track */
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* Thumb - Light Mode */
+  ::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 10px;
+    border: 2px solid transparent; 
+    background-clip: content-box;
+  }
+
+  /* Thumb - Dark Mode */
+  .dark ::-webkit-scrollbar-thumb {
+    background-color: #334155;
+  }
+
+  /* Hover States */
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: #94a3b8;
+  }
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background-color: #475569;
+  }
+}
+
+/* ========================================================================== */
+/* 3. CUSTOM PATTERNS & ASSETS                                                */
+/* ========================================================================== */
+
+/* Chat Background Pattern */
 .bg-chat-pattern {
   background-color: #efeae2;
   background-image: url("/images/chat-bg.png"); 
@@ -38,11 +102,11 @@
   opacity: 0.95;
 }
 
-/* -------------------------------------------------------------------------- */
-/* ANIMATIONS                                                                */
-/* -------------------------------------------------------------------------- */
+/* ========================================================================== */
+/* 4. KEYFRAME ANIMATIONS                                                     */
+/* ========================================================================== */
 
-/* Checkbox Slide Animation */
+/* Checkbox Entrance Animation */
 .checkbox-enter {
   animation: slideIn 0.2s ease-out forwards;
 }
