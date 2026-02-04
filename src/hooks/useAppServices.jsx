@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { X } from "lucide-react";
+import { X, RefreshCcw, Download } from "lucide-react"; 
+import { useRegisterSW } from "virtual:pwa-register/react";
 
 // Services
 import authService from "../appwrite/auth";
@@ -253,4 +254,109 @@ export const usePushNotifications = (isOnline, playSound) => {
     ), { duration: 6000, position: "top-right" });
 
   }, [incomingMessage, playSound, navigate]);
+};
+
+
+// --- 5. PWA Auto-Update Logic  ---
+export const usePWAUpdate = () => {
+  const {
+    needRefresh: [needRefresh, setNeedRefresh],
+    updateServiceWorker,
+  } = useRegisterSW({
+    onRegistered(r) {
+      console.log('SW Registered: ' + r);
+    },
+    onRegisterError(error) {
+      console.log('SW registration error', error);
+    },
+  });
+
+  useEffect(() => {
+    if (needRefresh) {
+      toast.custom((t) => (
+        <div 
+          className={`${t.visible ? "animate-in slide-in-from-right-5 fade-in" : "animate-out slide-out-to-right-0 fade-out"} pointer-events-auto`}
+          style={{
+              zIndex: 99999999,
+              background: "#0f172a",
+              border: "1px solid #334155",
+              color: "white",
+              padding: "16px", 
+              borderRadius: "16px", 
+              boxShadow: "0 10px 40px rgba(0,0,0,0.6)",
+              display: "flex",
+              flexDirection: "column", 
+              gap: "12px",
+              minWidth: "320px",
+              maxWidth: "400px"
+          }}
+        >
+          {/* Header Section */}
+          <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", width: "100%" }}>
+              <div style={{ flexShrink: 0 }}>
+                 {/* App Logo */}
+                 <img 
+                   src="/icons/logo.png" 
+                   alt="Icon" 
+                   style={{ width: "36px", height: "36px", borderRadius: "8px", objectFit: "cover", border: "1px solid #475569" }} 
+                 />
+              </div>
+              <div style={{ flex: 1 }}>
+                 <h4 style={{ margin: "0 0 4px 0", fontSize: "15px", fontWeight: "700", lineHeight: "1.2" }}>Update Available! 🚀</h4>
+                 <p style={{ margin: 0, fontSize: "13px", color: "#cbd5e1", lineHeight: "1.4" }}>
+                    A new version of MegaBlog is available. Update now for the best experience.
+                 </p>
+              </div>
+              <button onClick={() => toast.dismiss(t.id)} style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", padding: "4px", marginTop: "-4px" }}>
+                  <X size={18} />
+              </button>
+          </div>
+
+          {/* Action Buttons */}
+          <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+              <button 
+                onClick={() => {
+                  updateServiceWorker(true); 
+                  toast.dismiss(t.id);
+                }}
+                style={{ 
+                    flex: 1,
+                    background: "#16a34a", 
+                    color: "white", 
+                    border: "none", 
+                    borderRadius: "8px", 
+                    padding: "8px 12px", 
+                    fontSize: "13px", 
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px",
+                    transition: "background 0.2s"
+                }}
+              >
+                <RefreshCcw size={14} /> Update Now
+              </button>
+              
+              <button 
+                onClick={() => toast.dismiss(t.id)}
+                style={{ 
+                    background: "#334155", 
+                    color: "#e2e8f0", 
+                    border: "none", 
+                    borderRadius: "8px", 
+                    padding: "8px 12px", 
+                    fontSize: "13px", 
+                    fontWeight: "500",
+                    cursor: "pointer"
+                }}
+              >
+                Later
+              </button>
+          </div>
+        </div>
+      ), { duration: Infinity, position: "bottom-right" }); 
+    }
+  }, [needRefresh, updateServiceWorker]);
 };

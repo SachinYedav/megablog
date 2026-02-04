@@ -16,7 +16,8 @@ import {
   useAuthSession, 
   useNetworkStatus, 
   useAudioUnlock, 
-  usePushNotifications 
+  usePushNotifications,
+  usePWAUpdate
 } from "./hooks/useAppServices";
 
 function App() {
@@ -31,6 +32,9 @@ function App() {
 
   // 4. Notifications Logic 
   usePushNotifications(isOnline, playSound);
+
+  // 5. PWA Auto-Update Logic 
+  usePWAUpdate();
 
   // Loading State
   if (loading) return <AppLayoutSkeleton />;
