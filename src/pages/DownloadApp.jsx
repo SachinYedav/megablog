@@ -238,6 +238,21 @@ const PermissionsCard = () => {
     );
 };
 
+
+const formatCount = (num) => {
+    if (!num) return "100+"; 
+    
+    if (num < 10) return "10+";      
+    if (num < 50) return "50+";      
+    if (num < 100) return "100+";    
+    
+    // Standard Formatting
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + "M+";
+    if (num >= 1000) return (num / 1000).toFixed(1) + "k+";
+    
+    return num + "+";
+};
+
 // ==========================================
 // 4. MAIN PAGE COMPONENT
 // ==========================================
@@ -262,6 +277,7 @@ const DownloadApp = () => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [reviewToDelete, setReviewToDelete] = useState(null);
     const [showMenuId, setShowMenuId] = useState(null);
+    const [downloadCount, setDownloadCount] = useState("10k+");
 
     const mobileScreens = useMemo(() => ["/screenshots/mhomepage.jpeg", "/screenshots/msubscriptionspage.jpg", 
          "/screenshots/mpostpage.jpg", "/screenshots/mprofilepage.jpg", "/screenshots/msettingspage.jpg",], []); 
@@ -314,6 +330,12 @@ const DownloadApp = () => {
             try {
                 const res = await appwriteService.getRatings();
                 if (isMounted && res) setReviews(res.documents);
+
+                const totalUsers = await appwriteService.getUserCount();
+                
+                if (isMounted && totalUsers > 0) {
+                    setDownloadCount(formatCount(totalUsers));
+                }
 
                 if (userData && appwriteService.getUserReview) {
                     const existing = await appwriteService.getUserReview(userData.$id);
@@ -495,7 +517,7 @@ const DownloadApp = () => {
                                 <span>{reviews.length > 0 ? `${reviews.length} reviews` : "No reviews"}</span>
                                 <span className="w-px h-4 bg-gray-300 dark:bg-gray-700"></span>
                                 <div className="flex items-center gap-1">
-                                    <Download className="w-3.5 h-3.5" /> <span>10k+</span>
+                                    <Download className="w-3.5 h-3.5" /> <span>{downloadCount}</span>
                                 </div>
                                 <span className="w-px h-4 bg-gray-300 dark:bg-gray-700"></span>
                                 <span className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border dark:border-gray-700">Everyone</span>
@@ -785,9 +807,9 @@ const DownloadApp = () => {
                         {/* Info List */}
                         <div className="space-y-4 text-sm mb-6">
                             {[
-                                { l: "Version", v: "2.0.1 (Latest)" },
+                                { l: "Version", v: `v${__APP_VERSION__} (Latest)` },
                                 { l: "Updated on", v: "Feb 03, 2026" },
-                                { l: "Downloads", v: "10,000+" },
+                                { l: "Downloads", v: downloadCount },
                                 { l: "Required OS", v: "Android 8.0 / iOS 14.0" },
                                 { l: "Offered by", v: "MegaBlog Team" },
                                 { l: "Released on", v: "Jan 31, 2026" },

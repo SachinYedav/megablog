@@ -954,6 +954,22 @@ async getSearchSuggestions(query) {
             throw error;
         }
     }
+
+    async getUserCount() {
+    try {
+      const result = await this.databases.listDocuments(
+        conf.appwriteDatabaseId,
+        conf.appwriteProfilesCollectionId, 
+        [
+            Query.limit(1) 
+        ]
+      );
+      return result.total;
+    } catch (error) {
+      console.log("Appwrite service :: getUserCount :: error", error);
+      return 0; 
+    }
+  }
 }
 
 const service = new Service();

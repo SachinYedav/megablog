@@ -4,6 +4,9 @@ import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+  define: {
+    '__APP_VERSION__': JSON.stringify(process.env.npm_package_version),
+  },
   plugins: [
     react(),
     tailwindcss(),
@@ -63,6 +66,10 @@ export default defineConfig({
       workbox: {
         importScripts: ["firebase-messaging-sw.js"],
         navigateFallback: '/index.html',
+        navigateFallbackDenylist: [
+            /^\/sitemap\.xml$/, 
+            /^\/robots\.txt$/
+        ],
         cleanupOutdatedCaches: true, 
         clientsClaim: true, 
         skipWaiting: true,  
