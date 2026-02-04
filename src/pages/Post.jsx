@@ -18,7 +18,8 @@ import {
   BadgeCheck,
   MessageCircle,
   MessageSquare,
-  Lock 
+  Lock,
+  ChevronRight
 } from "lucide-react";
 
 // --- SERVICES ---
@@ -385,10 +386,22 @@ export default function Post() {
               LEFT / MAIN CONTENT (8 Columns) 
              ========================================= */}
           <div className="lg:col-span-8">
+            <nav className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-6 overflow-x-auto whitespace-nowrap scrollbar-hide">
+              <Link to="/" className="hover:text-primary-light transition-colors">Home</Link>
+              <ChevronRight size={14} />
+              <Link to="/all-posts" className="hover:text-primary-light transition-colors">Posts</Link>
+              <ChevronRight size={14} />
+              <span className="text-gray-900 dark:text-gray-200 font-medium truncate max-w-[150px]">{post.title}</span>
+            </nav>
             
             {/* Category / Date */}
             <div className="flex items-center gap-3 text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-3 font-semibold uppercase tracking-wide">
-               <span className="text-primary-light">{tagsList[0] || "Article"}</span>
+               <Link 
+                 to={`/all-posts?search=${tagsList[0] || ""}`} 
+                 className="text-primary-light hover:underline hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+               >
+                 {tagsList[0] || "Article"}
+               </Link>
                <span>•</span>
                <span>{new Date(post.$createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</span>
             </div>

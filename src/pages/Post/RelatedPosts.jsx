@@ -59,8 +59,6 @@ function RelatedPosts({ currentPostId, currentUserId }) {
         >
           <PostCard
             {...post}
-            // Note: Sidebar cards me avatar tabhi dikhega agar 'articles' collection me 'authorAvatarId' column ho.
-            // Abhi ke liye ye fallback (Initials) dikhayega jo expected hai.
           />
         </div>
       ))}

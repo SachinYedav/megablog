@@ -8,7 +8,7 @@ import confNode from '../src/conf/conf-node.js';
 // ==================================================================
 //  CONFIGURATION 
 // ==================================================================
-const DOMAIN = 'https://magablog.vercel.app/'; 
+const DOMAIN = 'https://magablog.vercel.app';
 
 async function generateSitemap() {
   console.log("🗺️  Starting Sitemap Generation...");
@@ -19,19 +19,19 @@ async function generateSitemap() {
   }
 
   try {
+    const currentDate = new Date().toISOString();
     // ==============================================================
-    // STEP 1: DEFINE STATIC ROUTES
+    // STEP 1: DEFINE STATIC ROUTES 
     // ==============================================================
     const links = [
-      { url: '/', changefreq: 'daily', priority: 1.0 },
-      { url: '/all-posts', changefreq: 'daily', priority: 0.9 },
-      { url: '/download', changefreq: 'monthly', priority: 0.8 },
-      { url: '/help', changefreq: 'monthly', priority: 0.7 },
-      
+      { url: '/', changefreq: 'daily', priority: 1.0, lastmod: currentDate },
+      { url: '/all-posts', changefreq: 'daily', priority: 0.9, lastmod: currentDate },
+      { url: '/download', changefreq: 'monthly', priority: 0.8, lastmod: currentDate },
+      { url: '/help', changefreq: 'monthly', priority: 0.7, lastmod: currentDate },
     ];
 
     // ==============================================================
-    // STEP 2: FETCH DYNAMIC POSTS (FROM APPWRITE)
+    // STEP 2: FETCH DYNAMIC POSTS 
     // ==============================================================
     console.log("📡 Connecting to Appwrite Database...");
 
@@ -58,7 +58,7 @@ async function generateSitemap() {
           url: `/post/${post.slug || post.$id}`,
           changefreq: 'weekly',
           priority: 0.7,
-          lastmod: post.$updatedAt 
+          lastmod: post.$updatedAt || post.$createdAt || currentDate
         });
       });
     }

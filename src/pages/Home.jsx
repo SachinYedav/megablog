@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import appwriteService from "../appwrite/config";
 import { Container, PostCard,  Button, SEO } from "../components";
 import { useSelector, useDispatch } from "react-redux";
-import { useNavigate, useSearchParams } from "react-router-dom";;
+import { useNavigate, useSearchParams, Link } from "react-router-dom";;
 import { PenTool, ArrowRight, Sparkles, Flame, Clock } from "lucide-react";
 import { Query } from "appwrite";
 import { openAuthModal } from "../store/authSlice";
@@ -137,37 +137,51 @@ const fetchFeed = useCallback(async () => {
           </div>{" "}
         </div>
 
-        <div className="flex items-center gap-6 md:gap-8 border-b border-gray-200 dark:border-gray-800 mb-8 overflow-x-auto scrollbar-hide">
-          <button
-            onClick={() => setSearchParams({ tab: "trending" })}
-            className={`pb-3 text-base md:text-lg font-bold flex items-center gap-2 transition-all relative whitespace-nowrap ${
-              activeTab === "trending"
-                ? "text-orange-500"
-                : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
-            }`}
+        {/* --- TABS SECTION --- */}
+        <div className="flex flex-wrap items-center justify-between border-b border-gray-200 dark:border-gray-800 mb-8">
+          
+          {/* Left Side: Tabs Buttons */}
+          <div className="flex items-center gap-6 md:gap-8 overflow-x-auto scrollbar-hide">
+            <button
+              onClick={() => setSearchParams({ tab: "trending" })}
+              className={`pb-3 text-base md:text-lg font-bold flex items-center gap-2 transition-all relative whitespace-nowrap ${
+                activeTab === "trending"
+                  ? "text-orange-500"
+                  : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+              }`}
+            >
+              <Flame
+                size={18}
+                className={activeTab === "trending" ? "fill-orange-500" : ""}
+              />
+              Trending
+              {activeTab === "trending" && (
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-orange-500 rounded-t-full animate-in zoom-in"></span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setSearchParams({ tab: "latest" })}
+              className={`pb-3 text-base md:text-lg font-bold flex items-center gap-2 transition-all relative whitespace-nowrap ${
+                activeTab === "latest"
+                  ? "text-primary-light"
+                  : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+              }`}
+            >
+              <Clock size={18} /> Fresh Reads
+              {activeTab === "latest" && (
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-light rounded-t-full animate-in zoom-in"></span>
+              )}
+            </button>
+          </div>
+
+          {/* Right Side: View All Link  */}
+          <Link 
+            to="/all-posts" 
+            className="hidden md:flex items-center gap-1 text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors pb-2"
           >
-            <Flame
-              size={18}
-              className={activeTab === "trending" ? "fill-orange-500" : ""}
-            />
-            Trending
-            {activeTab === "trending" && (
-              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-orange-500 rounded-t-full animate-in zoom-in"></span>
-            )}
-          </button>
-          <button
-            onClick={() => setSearchParams({ tab: "latest" })}
-            className={`pb-3 text-base md:text-lg font-bold flex items-center gap-2 transition-all relative whitespace-nowrap ${
-              activeTab === "latest"
-                ? "text-primary-light"
-                : "text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
-            }`}
-          >
-            <Clock size={18} /> Fresh Reads
-            {activeTab === "latest" && (
-              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-light rounded-t-full animate-in zoom-in"></span>
-            )}
-          </button>
+            View all posts <ArrowRight size={16} />
+          </Link>
         </div>
 
         {/* --- POSTS GRID --- */}
@@ -208,6 +222,15 @@ const fetchFeed = useCallback(async () => {
               </Button>
             )}
           </div>
+        )}
+        {!loading && posts.length > 0 && (
+            <div className="mt-8 flex justify-center md:hidden">
+                <Link to="/all-posts">
+                    <Button className="bg-transparent border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full px-8">
+                        View All Articles
+                    </Button>
+                </Link>
+            </div>
         )}
       </Container>
     </div>

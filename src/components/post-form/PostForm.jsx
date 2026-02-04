@@ -266,12 +266,6 @@ export default function PostForm({ post, onPostSubmit, loading, progress, upload
       searchIndex: searchString.trim() 
     };
 
-    if (explicitStatus === 'inactive') {
-    toast.loading("Saving Draft...", { duration: 2000 });
-    } else {
-    toast.loading("Publishing Post...", { duration: 2000 });
-    }
-
     // Step 3: Submit to Parent
     await onPostSubmit({
       data: finalData,

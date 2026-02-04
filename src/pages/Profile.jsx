@@ -247,9 +247,9 @@ export default function Profile() {
     }
   };
 
-  const handleUpdateProfile = async (data) => {
+const handleUpdateProfile = async (data, silent = false) => { 
     setActionLoading(true);
-    const toastId = toast.loading("Saving...");
+    const toastId = !silent ? toast.loading("Saving...") : null;
     try {
       const attributesJSON = JSON.stringify({
         website: data.website || "",
@@ -284,10 +284,14 @@ export default function Profile() {
 
       setUserProfile(updated);
       setModalConfig({ isOpen: false, type: null });
-      toast.success("Changes Saved!", { id: toastId });
+
+      if (!silent) toast.success("Changes Saved!", { id: toastId });
+      return updated; 
     } catch (e) {
       console.error(e);
-      toast.error("Failed", { id: toastId });
+
+      if (!silent) toast.error("Failed", { id: toastId });
+      throw e;
     } finally {
       setActionLoading(false);
     }
@@ -308,7 +312,7 @@ export default function Profile() {
 
   const onCropComplete = useCallback((_, pixels) => setCroppedAreaPixels(pixels), []);
 
-  const uploadCroppedImage = async () => {
+const uploadCroppedImage = async () => {
     setActionLoading(true);
     const toastId = toast.loading("Uploading avatar...");
     try {
@@ -319,7 +323,7 @@ export default function Profile() {
       
       if (uploaded) {
         if (userProfile?.avatarId) await appwriteService.deleteFile(userProfile.avatarId);
-        await handleUpdateProfile({ avatarId: uploaded.$id }); 
+        await handleUpdateProfile({ avatarId: uploaded.$id }, true); 
       }
       
       setModalConfig({ isOpen: false, type: null });

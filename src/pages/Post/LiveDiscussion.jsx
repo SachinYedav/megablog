@@ -133,7 +133,6 @@ export default function LiveDiscussion({ articleId }) {
                                             {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                         </p>
                                         
-                                        {/* 🟢 DELETE BUTTON (Fixed Visibility) */}
                                         {isMe && (
                                             <button 
                                                 onClick={() => setDeleteModal({ isOpen: true, msgId: msg.$id })}

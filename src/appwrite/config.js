@@ -134,8 +134,12 @@ async checkUsernameAvailability(username) {
           isPinned: false
         }
       );
-    } catch (error) {
+    }catch (error) {
       console.log("Appwrite service :: createPost :: error", error);
+      if (error.code === 409) {
+        throw new Error("A post with this title already exists. Please choose a unique title.");
+      }
+      throw error;
     }
   }
 
@@ -206,24 +210,26 @@ async checkUsernameAvailability(username) {
   // Related Posts Logic
   async getRelatedPosts(currentPostId, userId) {
     try {
-      // 1. Same Author
+      // 1. Same Author 
       let posts = await this.databases.listDocuments(
         conf.appwriteDatabaseId,
         conf.appwriteCollectionId,
         [
           Query.equal("userId", userId),
+          Query.equal("status", "active"), 
           Query.notEqual("$id", currentPostId),
           Query.limit(4),
         ]
       );
 
-      // 2. Fallback Recent
+      // 2. Fallback Recent 
       if (posts.documents.length < 4) {
         const limitNeeded = 4 - posts.documents.length;
         const morePosts = await this.databases.listDocuments(
           conf.appwriteDatabaseId,
           conf.appwriteCollectionId,
           [
+            Query.equal("status", "active"),
             Query.notEqual("$id", currentPostId),
             Query.notEqual("userId", userId),
             Query.limit(limitNeeded),
@@ -463,7 +469,11 @@ async deleteComment(commentId) {
       );
     } catch (error) {
       console.log("Appwrite service :: uploadFile :: error", error);
-      return false;
+
+      if (error.code === 413) {
+          throw new Error("Image file is too large (Max 10MB allowed).");
+      }
+      throw error; 
     }
   }
 
@@ -730,7 +740,8 @@ async deleteComment(commentId) {
         { isPinned }
       );
     } catch (error) {
-      return false;
+      console.log("Appwrite service :: updatePost :: error", error);
+      throw error; 
     }
   }
 

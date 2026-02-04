@@ -25,7 +25,11 @@ export default function useSubmitPost() {
 
     setLoading(true);
     setProgress(10);
-    const toastId = toast.loading(existingPost ? "Updating post..." : "Publishing post...");
+    const loadingMessage = explicitStatus === "inactive" 
+        ? "Saving Draft..." 
+        : (existingPost ? "Updating post..." : "Publishing post...");
+    const toastId = toast.loading(loadingMessage);
+    
     let fileId = existingPost ? existingPost.featuredImage : null;
     let uploadedFile = null;
 
