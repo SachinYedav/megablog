@@ -15,7 +15,7 @@ export default defineConfig({
     //  PWA CONFIGURATION 
     // ============================================================
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       includeAssets: [
           "favicon.ico", 
           "icons/apple-touch-icon.png", 
@@ -137,6 +137,5 @@ export default defineConfig({
     host: true, 
     port: 5173,
     strictPort: true,
-    allowedHosts :true
   },
 });

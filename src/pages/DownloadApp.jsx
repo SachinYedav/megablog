@@ -808,7 +808,7 @@ const DownloadApp = () => {
                         <div className="space-y-4 text-sm mb-6">
                             {[
                                 { l: "Version", v: `v${__APP_VERSION__} (Latest)` },
-                                { l: "Updated on", v: "Feb 03, 2026" },
+                                { l: "Updated on", v: "Feb 04, 2026" },
                                 { l: "Downloads", v: downloadCount },
                                 { l: "Required OS", v: "Android 8.0 / iOS 14.0" },
                                 { l: "Offered by", v: "MegaBlog Team" },
